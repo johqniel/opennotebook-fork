@@ -154,18 +154,24 @@ async def transform_content(state: TransformationState) -> Optional[dict]:
     transformation: Transformation = state["transformation"]
 
     logger.debug(f"Applying transformation {transformation.name}")
-    result = await transform_graph.ainvoke(
-        dict(input_text=content, transformation=transformation)  # type: ignore[arg-type]
-    )
-    await source.add_insight(transformation.title, result["output"])
-    return {
-        "transformation": [
-            {
-                "output": result["output"],
-                "transformation_name": transformation.name,
-            }
-        ]
-    }
+    try:
+        result = await transform_graph.ainvoke(
+            dict(input_text=content, transformation=transformation)  # type: ignore[arg-type]
+        )
+        await source.add_insight(transformation.title, result["output"])
+        return {
+            "transformation": [
+                {
+                    "output": result["output"],
+                    "transformation_name": transformation.name,
+                }
+            ]
+        }
+    except Exception as e:
+        logger.warning(
+            f"Failed to apply transformation {transformation.name} to source {source.id}: {e}"
+        )
+        return {}
 
 
 # Create and compile the workflow
