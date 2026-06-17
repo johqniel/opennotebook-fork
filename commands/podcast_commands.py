@@ -9,6 +9,7 @@ from surreal_commands import CommandInput, CommandOutput, command
 
 from open_notebook.config import DATA_FOLDER
 from open_notebook.database.repository import ensure_record_id, repo_query
+from open_notebook.podcasts.audio_overview_config import AudioOverviewConfig
 from open_notebook.podcasts.models import (
     EpisodeProfile,
     PodcastEpisode,
@@ -54,6 +55,10 @@ class PodcastGenerationInput(CommandInput):
     episode_name: str
     content: str
     briefing_suffix: Optional[str] = None
+    # Compact, encoded AudioOverviewConfig token (see
+    # open_notebook.podcasts.audio_overview_config). Optional and backward
+    # compatible: when absent, generation behaves exactly as before.
+    audio_overview_config: Optional[str] = None
 
 
 class PodcastGenerationOutput(CommandOutput):
@@ -207,10 +212,25 @@ async def generate_podcast_command(
                             f"Failed to resolve per-speaker TTS for '{speaker.get('name')}': {e}"
                         )
 
-        # 6. Generate briefing
+        # 6. Generate briefing. Start from the profile's default briefing and the
+        # legacy free-form suffix (the factual instructions), then append the
+        # user's audio overview preferences (topics to emphasize, audience, tone,
+        # level of detail, etc.) as the final, XML-fenced block. Placing the
+        # guarded style block last keeps it clearly separated from the factual
+        # briefing and the source content, and constrains it to presentation
+        # only — it cannot override facts or safety rules.
         briefing = episode_profile.default_briefing
         if input_data.briefing_suffix:
             briefing += f"\n\nAdditional instructions: {input_data.briefing_suffix}"
+        overview_config = AudioOverviewConfig.decode_safe(
+            input_data.audio_overview_config
+        )
+        if overview_config is not None and not overview_config.is_empty():
+            briefing = overview_config.build_briefing(briefing)
+            logger.info(
+                "Applied audio overview configuration to briefing: {}",
+                overview_config.to_telemetry(),
+            )
 
         # Create the record for the episode and associate with the ongoing command
         episode = PodcastEpisode(
@@ -222,6 +242,7 @@ async def generate_podcast_command(
             else None,
             briefing=briefing,
             content=input_data.content,
+            audio_overview_config=input_data.audio_overview_config,
             audio_file=None,
             transcript=None,
             outline=None,

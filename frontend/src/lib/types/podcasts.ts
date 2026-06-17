@@ -64,6 +64,21 @@ export interface PodcastEpisode {
   error_message?: string | null
 }
 
+// Listener preferences for the audio overview. Mirrors the backend
+// open_notebook.podcasts.audio_overview_config.AudioOverviewConfig model.
+export interface AudioOverviewConfig {
+  topics_to_emphasize?: string[]
+  topics_to_avoid?: string[]
+  intended_audience?: string | null
+  tone?: string
+  level_of_detail?: string
+  format_style?: string | null
+  key_questions?: string[]
+  target_duration_minutes?: number | null
+  language?: string | null
+  custom_instructions?: string | null
+}
+
 export interface PodcastGenerationRequest {
   episode_profile: string
   speaker_profile: string
@@ -71,6 +86,7 @@ export interface PodcastGenerationRequest {
   content?: string
   notebook_id?: string
   briefing_suffix?: string | null
+  audio_overview_config?: AudioOverviewConfig | null
 }
 
 export interface PodcastGenerationResponse {

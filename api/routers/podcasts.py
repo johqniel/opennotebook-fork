@@ -52,6 +52,7 @@ async def generate_podcast(request: PodcastGenerationRequest):
             notebook_id=request.notebook_id,
             content=request.content,
             briefing_suffix=request.briefing_suffix,
+            audio_overview_config=request.audio_overview_config,
         )
 
         return PodcastGenerationResponse(
@@ -231,6 +232,8 @@ async def retry_podcast_episode(episode_id: str):
         sp_profile_name = episode.speaker_profile.get("name")
         episode_name = episode.name
         content = episode.content
+        # Preserve the original audio overview configuration on retry.
+        audio_overview_config = episode.audio_overview_config
 
         if not ep_profile_name or not sp_profile_name:
             raise HTTPException(
@@ -256,6 +259,7 @@ async def retry_podcast_episode(episode_id: str):
             speaker_profile_name=sp_profile_name,
             episode_name=episode_name,
             content=content,
+            audio_overview_config=audio_overview_config,
         )
 
         return {"job_id": job_id, "message": "Retry submitted successfully"}

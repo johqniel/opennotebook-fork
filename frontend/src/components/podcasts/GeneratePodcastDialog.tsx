@@ -11,7 +11,7 @@ import { sourcesApi } from '@/lib/api/sources'
 import { notesApi } from '@/lib/api/notes'
 import { BuildContextRequest, NoteResponse, NotebookResponse, SourceListResponse } from '@/lib/types/api'
 import type { QueryClient } from '@tanstack/react-query'
-import { PodcastGenerationRequest } from '@/lib/types/podcasts'
+import { AudioOverviewConfig, PodcastGenerationRequest } from '@/lib/types/podcasts'
 import { QUERY_KEYS } from '@/lib/api/query-client'
 import { useToast } from '@/lib/hooks/use-toast'
 import { useTranslation } from '@/lib/hooks/use-translation'
@@ -34,6 +34,38 @@ import { Separator } from '@/components/ui/separator'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 
 type SourceMode = 'off' | 'insights' | 'full'
+
+// --- Audio overview configuration (NEW feature, highlighted bright pink for testing) ---
+// `PINK` is a temporary testing marker so new objects are easy to spot in the UI.
+const PINK = '#ff10f0'
+const UNSET = '__default__'
+
+// Enum option values mirror the backend AudioOverviewConfig vocabularies.
+const TONE_OPTIONS = [
+  'neutral', 'conversational', 'professional', 'educational', 'enthusiastic',
+  'humorous', 'formal', 'casual', 'inspirational', 'analytical', 'empathetic',
+]
+const DETAIL_OPTIONS = ['overview', 'balanced', 'detailed', 'comprehensive']
+const FORMAT_OPTIONS = [
+  'narrative', 'interview', 'debate', 'q_and_a', 'lecture', 'storytelling',
+  'news_brief', 'deep_dive',
+]
+
+// Title-case an enum value for display (e.g. "q_and_a" -> "Q And A").
+function prettyLabel(value: string): string {
+  return value
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+// Split a comma/newline separated string into a clean list.
+function splitList(value: string): string[] {
+  return value
+    .split(/[\n,]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
 
 interface NotebookSelection {
   sources: Record<string, SourceMode>
@@ -404,6 +436,16 @@ export function GeneratePodcastDialog({ open, onOpenChange }: GeneratePodcastDia
   const [episodeName, setEpisodeName] = useState('')
   const [instructions, setInstructions] = useState('')
 
+  // --- Audio overview configuration (NEW) ---
+  const [tone, setTone] = useState(UNSET)
+  const [levelOfDetail, setLevelOfDetail] = useState(UNSET)
+  const [formatStyle, setFormatStyle] = useState(UNSET)
+  const [intendedAudience, setIntendedAudience] = useState('')
+  const [topicsEmphasize, setTopicsEmphasize] = useState('')
+  const [topicsAvoid, setTopicsAvoid] = useState('')
+  const [keyQuestions, setKeyQuestions] = useState('')
+  const [targetDuration, setTargetDuration] = useState('')
+
   const [isBuildingContext, setIsBuildingContext] = useState(false)
   const [tokenCount, setTokenCount] = useState<number>(0)
   const [charCount, setCharCount] = useState<number>(0)
@@ -543,6 +585,14 @@ export function GeneratePodcastDialog({ open, onOpenChange }: GeneratePodcastDia
     setEpisodeProfileId('')
     setEpisodeName('')
     setInstructions('')
+    setTone(UNSET)
+    setLevelOfDetail(UNSET)
+    setFormatStyle(UNSET)
+    setIntendedAudience('')
+    setTopicsEmphasize('')
+    setTopicsAvoid('')
+    setKeyQuestions('')
+    setTargetDuration('')
     setTokenCount(0)
     setCharCount(0)
   }, [])
@@ -810,12 +860,32 @@ export function GeneratePodcastDialog({ open, onOpenChange }: GeneratePodcastDia
         return
       }
 
+      // Assemble the audio overview configuration from the (pink) controls.
+      // Only fields the user actually set are included; if nothing was set the
+      // whole object is omitted, leaving default generation behavior unchanged.
+      const overview: AudioOverviewConfig = {}
+      if (tone !== UNSET) overview.tone = tone
+      if (levelOfDetail !== UNSET) overview.level_of_detail = levelOfDetail
+      if (formatStyle !== UNSET) overview.format_style = formatStyle
+      if (intendedAudience.trim()) overview.intended_audience = intendedAudience.trim()
+      const emphasize = splitList(topicsEmphasize)
+      if (emphasize.length) overview.topics_to_emphasize = emphasize
+      const avoid = splitList(topicsAvoid)
+      if (avoid.length) overview.topics_to_avoid = avoid
+      const questions = splitList(keyQuestions)
+      if (questions.length) overview.key_questions = questions
+      const duration = parseInt(targetDuration, 10)
+      if (!Number.isNaN(duration) && duration > 0) {
+        overview.target_duration_minutes = duration
+      }
+
       const payload: PodcastGenerationRequest = {
         episode_profile: selectedEpisodeProfile.name,
         speaker_profile: selectedEpisodeProfile.speaker_config,
         episode_name: episodeName.trim(),
         content,
         briefing_suffix: instructions.trim() ? instructions.trim() : undefined,
+        audio_overview_config: Object.keys(overview).length ? overview : undefined,
       }
 
       await generatePodcast.mutateAsync(payload)
@@ -845,6 +915,14 @@ export function GeneratePodcastDialog({ open, onOpenChange }: GeneratePodcastDia
     episodeName,
     generatePodcast,
     instructions,
+    tone,
+    levelOfDetail,
+    formatStyle,
+    intendedAudience,
+    topicsEmphasize,
+    topicsAvoid,
+    keyQuestions,
+    targetDuration,
     onOpenChange,
     resetState,
     selectedEpisodeProfile,
@@ -952,6 +1030,141 @@ export function GeneratePodcastDialog({ open, onOpenChange }: GeneratePodcastDia
                       className="min-h-[100px] text-xs"
                       autoComplete="off"
                     />
+                  </div>
+
+                  {/* NEW: Audio overview configuration — highlighted bright pink for testing. */}
+                  <div
+                    className="space-y-3 rounded-lg border-2 p-3"
+                    style={{ borderColor: PINK, backgroundColor: `${PINK}14` }}
+                  >
+                    <div>
+                      <h4
+                        className="text-sm font-semibold uppercase tracking-wide"
+                        style={{ color: PINK }}
+                      >
+                        Audio Overview Config (NEW)
+                      </h4>
+                      <p className="text-xs" style={{ color: PINK }}>
+                        Optional preferences that shape how the overview sounds.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="aoc_tone" style={{ color: PINK }}>Tone</Label>
+                      <Select value={tone} onValueChange={setTone}>
+                        <SelectTrigger id="aoc_tone" style={{ borderColor: PINK }}>
+                          <SelectValue placeholder="Default tone" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={UNSET}>Default</SelectItem>
+                          {TONE_OPTIONS.map((value) => (
+                            <SelectItem key={value} value={value}>{prettyLabel(value)}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="aoc_detail" style={{ color: PINK }}>Level of detail</Label>
+                      <Select value={levelOfDetail} onValueChange={setLevelOfDetail}>
+                        <SelectTrigger id="aoc_detail" style={{ borderColor: PINK }}>
+                          <SelectValue placeholder="Default detail" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={UNSET}>Default</SelectItem>
+                          {DETAIL_OPTIONS.map((value) => (
+                            <SelectItem key={value} value={value}>{prettyLabel(value)}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="aoc_format" style={{ color: PINK }}>Format</Label>
+                      <Select value={formatStyle} onValueChange={setFormatStyle}>
+                        <SelectTrigger id="aoc_format" style={{ borderColor: PINK }}>
+                          <SelectValue placeholder="Default format" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={UNSET}>Default</SelectItem>
+                          {FORMAT_OPTIONS.map((value) => (
+                            <SelectItem key={value} value={value}>{prettyLabel(value)}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="aoc_audience" style={{ color: PINK }}>Intended audience</Label>
+                      <Input
+                        id="aoc_audience"
+                        value={intendedAudience}
+                        onChange={(event) => setIntendedAudience(event.target.value)}
+                        placeholder="e.g. engineers new to ML"
+                        style={{ borderColor: PINK }}
+                        autoComplete="off"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="aoc_emphasize" style={{ color: PINK }}>
+                        Topics to emphasize (comma separated)
+                      </Label>
+                      <Input
+                        id="aoc_emphasize"
+                        value={topicsEmphasize}
+                        onChange={(event) => setTopicsEmphasize(event.target.value)}
+                        placeholder="e.g. attention, transformers"
+                        style={{ borderColor: PINK }}
+                        autoComplete="off"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="aoc_avoid" style={{ color: PINK }}>
+                        Topics to avoid (comma separated)
+                      </Label>
+                      <Input
+                        id="aoc_avoid"
+                        value={topicsAvoid}
+                        onChange={(event) => setTopicsAvoid(event.target.value)}
+                        placeholder="e.g. pricing, roadmap"
+                        style={{ borderColor: PINK }}
+                        autoComplete="off"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="aoc_questions" style={{ color: PINK }}>
+                        Key questions (one per line)
+                      </Label>
+                      <Textarea
+                        id="aoc_questions"
+                        value={keyQuestions}
+                        onChange={(event) => setKeyQuestions(event.target.value)}
+                        placeholder="What problem does it solve?"
+                        className="min-h-[60px] text-xs"
+                        style={{ borderColor: PINK }}
+                        autoComplete="off"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="aoc_duration" style={{ color: PINK }}>
+                        Target duration (minutes)
+                      </Label>
+                      <Input
+                        id="aoc_duration"
+                        type="number"
+                        min={1}
+                        max={180}
+                        value={targetDuration}
+                        onChange={(event) => setTargetDuration(event.target.value)}
+                        placeholder="e.g. 15"
+                        style={{ borderColor: PINK }}
+                        autoComplete="off"
+                      />
+                    </div>
                   </div>
                 </div>
               )}

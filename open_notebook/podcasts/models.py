@@ -203,6 +203,7 @@ class PodcastEpisode(ObjectModel):
     """Enhanced PodcastEpisode with job tracking and metadata"""
 
     table_name: ClassVar[str] = "episode"
+    nullable_fields: ClassVar[set[str]] = {"audio_overview_config"}
 
     name: str = Field(..., description="Episode name")
     episode_profile: Dict[str, Any] = Field(
@@ -213,6 +214,10 @@ class PodcastEpisode(ObjectModel):
     )
     briefing: str = Field(..., description="Full briefing used for generation")
     content: str = Field(..., description="Source content")
+    audio_overview_config: Optional[str] = Field(
+        default=None,
+        description="Encoded audio overview configuration token (preserved for retries)",
+    )
     audio_file: Optional[str] = Field(
         default=None, description="Path to generated audio file"
     )

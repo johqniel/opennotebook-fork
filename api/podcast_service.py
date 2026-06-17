@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from fastapi import HTTPException
 from loguru import logger
@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from surreal_commands import get_command_status, submit_command
 
 from open_notebook.domain.notebook import Notebook
+from open_notebook.podcasts.audio_overview_config import AudioOverviewConfig
 from open_notebook.podcasts.models import EpisodeProfile, PodcastEpisode, SpeakerProfile
 
 
@@ -18,6 +19,7 @@ class PodcastGenerationRequest(BaseModel):
     content: Optional[str] = None
     notebook_id: Optional[str] = None
     briefing_suffix: Optional[str] = None
+    audio_overview_config: Optional[AudioOverviewConfig] = None
 
 
 class PodcastGenerationResponse(BaseModel):
@@ -41,6 +43,9 @@ class PodcastService:
         notebook_id: Optional[str] = None,
         content: Optional[str] = None,
         briefing_suffix: Optional[str] = None,
+        audio_overview_config: Optional[
+            Union[AudioOverviewConfig, Dict[str, Any], str]
+        ] = None,
     ) -> str:
         """Submit a podcast generation job for background processing"""
         try:
@@ -83,6 +88,19 @@ class PodcastService:
                 "content": str(content),
                 "briefing_suffix": briefing_suffix,
             }
+
+            # Encode the audio overview configuration into a compact token so it
+            # can travel through the job-queue payload as a single string. Only
+            # added when the user actually supplied preferences, keeping the
+            # default pipeline behavior unchanged. from_raw sanitizes free-text
+            # input (neutralizing prompt-injection attempts) before encoding.
+            overview_config = AudioOverviewConfig.from_raw(audio_overview_config)
+            if not overview_config.is_empty():
+                command_args["audio_overview_config"] = overview_config.encode()
+                # Non-PII, low-cardinality flags for later aggregate analytics.
+                logger.info(
+                    f"Audio overview config telemetry: {overview_config.to_telemetry()}"
+                )
 
             # Ensure command modules are imported before submitting
             # This is needed because submit_command validates against local registry
