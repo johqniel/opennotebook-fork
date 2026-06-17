@@ -966,229 +966,231 @@ export function GeneratePodcastDialog({ open, onOpenChange }: GeneratePodcastDia
             queryClient={queryClient}
           />
 
-          <div className="space-y-6">
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                {t('podcasts.episodeSettings')}
-              </h3>
-              {episodeProfilesQuery.isLoading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> {t('podcasts.loadingProfiles')}
-                </div>
-              ) : episodeProfiles.length === 0 ? (
-                <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground">
-                  {t('podcasts.noProfilesFound')}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="episode_profile">{t('podcasts.episodeProfile')}</Label>
-                    <Select
-                      value={episodeProfileId}
-                      onValueChange={setEpisodeProfileId}
-                      disabled={episodeProfiles.length === 0}
-                    >
-                      <SelectTrigger id="episode_profile">
-                        <SelectValue placeholder={t('podcasts.episodeProfilePlaceholder')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {episodeProfiles.map((profile) => (
-                          <SelectItem key={profile.id} value={profile.id}>
-                            {profile.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {selectedEpisodeProfile && (
-                      <p className="text-xs text-muted-foreground">
-                        {t('podcasts.usesSpeakerProfile')}{' '}
-                        <strong>{selectedEpisodeProfile.speaker_config}</strong>
-                      </p>
-                    )}
+          <ScrollArea className="h-[70vh] pr-4">
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  {t('podcasts.episodeSettings')}
+                </h3>
+                {episodeProfilesQuery.isLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" /> {t('podcasts.loadingProfiles')}
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="episode_name">{t('podcasts.episodeName')}</Label>
-                    <Input
-                      id="episode_name"
-                      name="episode_name"
-                      value={episodeName}
-                      onChange={(event) => setEpisodeName(event.target.value)}
-                      placeholder={t('podcasts.episodeNamePlaceholder')}
-                      autoComplete="off"
-                    />
+                ) : episodeProfiles.length === 0 ? (
+                  <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground">
+                    {t('podcasts.noProfilesFound')}
                   </div>
-
-                   <div className="space-y-2">
-                    <Label htmlFor="instructions">{t('podcasts.additionalInstructions')}</Label>
-                    <Textarea
-                      id="instructions"
-                      name="instructions"
-                      placeholder={t('podcasts.instructionsPlaceholder')}
-                      value={instructions}
-                      onChange={(event) => setInstructions(event.target.value)}
-                      className="min-h-[100px] text-xs"
-                      autoComplete="off"
-                    />
-                  </div>
-
-                  {/* NEW: Audio overview configuration — highlighted bright pink for testing. */}
-                  <div
-                    className="space-y-3 rounded-lg border-2 p-3"
-                    style={{ borderColor: PINK, backgroundColor: `${PINK}14` }}
-                  >
-                    <div>
-                      <h4
-                        className="text-sm font-semibold uppercase tracking-wide"
-                        style={{ color: PINK }}
+                ) : (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="episode_profile">{t('podcasts.episodeProfile')}</Label>
+                      <Select
+                        value={episodeProfileId}
+                        onValueChange={setEpisodeProfileId}
+                        disabled={episodeProfiles.length === 0}
                       >
-                        Audio Overview Config (NEW)
-                      </h4>
-                      <p className="text-xs" style={{ color: PINK }}>
-                        Optional preferences that shape how the overview sounds.
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="aoc_tone" style={{ color: PINK }}>Tone</Label>
-                      <Select value={tone} onValueChange={setTone}>
-                        <SelectTrigger id="aoc_tone" style={{ borderColor: PINK }}>
-                          <SelectValue placeholder="Default tone" />
+                        <SelectTrigger id="episode_profile">
+                          <SelectValue placeholder={t('podcasts.episodeProfilePlaceholder')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={UNSET}>Default</SelectItem>
-                          {TONE_OPTIONS.map((value) => (
-                            <SelectItem key={value} value={value}>{prettyLabel(value)}</SelectItem>
+                          {episodeProfiles.map((profile) => (
+                            <SelectItem key={profile.id} value={profile.id}>
+                              {profile.name}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      {selectedEpisodeProfile && (
+                        <p className="text-xs text-muted-foreground">
+                          {t('podcasts.usesSpeakerProfile')}{' '}
+                          <strong>{selectedEpisodeProfile.speaker_config}</strong>
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="aoc_detail" style={{ color: PINK }}>Level of detail</Label>
-                      <Select value={levelOfDetail} onValueChange={setLevelOfDetail}>
-                        <SelectTrigger id="aoc_detail" style={{ borderColor: PINK }}>
-                          <SelectValue placeholder="Default detail" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={UNSET}>Default</SelectItem>
-                          {DETAIL_OPTIONS.map((value) => (
-                            <SelectItem key={value} value={value}>{prettyLabel(value)}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="aoc_format" style={{ color: PINK }}>Format</Label>
-                      <Select value={formatStyle} onValueChange={setFormatStyle}>
-                        <SelectTrigger id="aoc_format" style={{ borderColor: PINK }}>
-                          <SelectValue placeholder="Default format" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={UNSET}>Default</SelectItem>
-                          {FORMAT_OPTIONS.map((value) => (
-                            <SelectItem key={value} value={value}>{prettyLabel(value)}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="aoc_audience" style={{ color: PINK }}>Intended audience</Label>
+                      <Label htmlFor="episode_name">{t('podcasts.episodeName')}</Label>
                       <Input
-                        id="aoc_audience"
-                        value={intendedAudience}
-                        onChange={(event) => setIntendedAudience(event.target.value)}
-                        placeholder="e.g. engineers new to ML"
-                        style={{ borderColor: PINK }}
+                        id="episode_name"
+                        name="episode_name"
+                        value={episodeName}
+                        onChange={(event) => setEpisodeName(event.target.value)}
+                        placeholder={t('podcasts.episodeNamePlaceholder')}
                         autoComplete="off"
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="aoc_emphasize" style={{ color: PINK }}>
-                        Topics to emphasize (comma separated)
-                      </Label>
-                      <Input
-                        id="aoc_emphasize"
-                        value={topicsEmphasize}
-                        onChange={(event) => setTopicsEmphasize(event.target.value)}
-                        placeholder="e.g. attention, transformers"
-                        style={{ borderColor: PINK }}
-                        autoComplete="off"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="aoc_avoid" style={{ color: PINK }}>
-                        Topics to avoid (comma separated)
-                      </Label>
-                      <Input
-                        id="aoc_avoid"
-                        value={topicsAvoid}
-                        onChange={(event) => setTopicsAvoid(event.target.value)}
-                        placeholder="e.g. pricing, roadmap"
-                        style={{ borderColor: PINK }}
-                        autoComplete="off"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="aoc_questions" style={{ color: PINK }}>
-                        Key questions (one per line)
-                      </Label>
+                     <div className="space-y-2">
+                      <Label htmlFor="instructions">{t('podcasts.additionalInstructions')}</Label>
                       <Textarea
-                        id="aoc_questions"
-                        value={keyQuestions}
-                        onChange={(event) => setKeyQuestions(event.target.value)}
-                        placeholder="What problem does it solve?"
-                        className="min-h-[60px] text-xs"
-                        style={{ borderColor: PINK }}
+                        id="instructions"
+                        name="instructions"
+                        placeholder={t('podcasts.instructionsPlaceholder')}
+                        value={instructions}
+                        onChange={(event) => setInstructions(event.target.value)}
+                        className="min-h-[100px] text-xs"
                         autoComplete="off"
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="aoc_duration" style={{ color: PINK }}>
-                        Target duration (minutes)
-                      </Label>
-                      <Input
-                        id="aoc_duration"
-                        type="number"
-                        min={1}
-                        max={180}
-                        value={targetDuration}
-                        onChange={(event) => setTargetDuration(event.target.value)}
-                        placeholder="e.g. 15"
-                        style={{ borderColor: PINK }}
-                        autoComplete="off"
-                      />
+                    {/* NEW: Audio overview configuration — highlighted bright pink for testing. */}
+                    <div
+                      className="space-y-3 rounded-lg border-2 p-3"
+                      style={{ borderColor: PINK, backgroundColor: `${PINK}14` }}
+                    >
+                      <div>
+                        <h4
+                          className="text-sm font-semibold uppercase tracking-wide"
+                          style={{ color: PINK }}
+                        >
+                          Audio Overview Config (NEW)
+                        </h4>
+                        <p className="text-xs" style={{ color: PINK }}>
+                          Optional preferences that shape how the overview sounds.
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="aoc_tone" style={{ color: PINK }}>Tone</Label>
+                        <Select value={tone} onValueChange={setTone}>
+                          <SelectTrigger id="aoc_tone" style={{ borderColor: PINK }}>
+                            <SelectValue placeholder="Default tone" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={UNSET}>Default</SelectItem>
+                            {TONE_OPTIONS.map((value) => (
+                              <SelectItem key={value} value={value}>{prettyLabel(value)}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="aoc_detail" style={{ color: PINK }}>Level of detail</Label>
+                        <Select value={levelOfDetail} onValueChange={setLevelOfDetail}>
+                          <SelectTrigger id="aoc_detail" style={{ borderColor: PINK }}>
+                            <SelectValue placeholder="Default detail" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={UNSET}>Default</SelectItem>
+                            {DETAIL_OPTIONS.map((value) => (
+                              <SelectItem key={value} value={value}>{prettyLabel(value)}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="aoc_format" style={{ color: PINK }}>Format</Label>
+                        <Select value={formatStyle} onValueChange={setFormatStyle}>
+                          <SelectTrigger id="aoc_format" style={{ borderColor: PINK }}>
+                            <SelectValue placeholder="Default format" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={UNSET}>Default</SelectItem>
+                            {FORMAT_OPTIONS.map((value) => (
+                              <SelectItem key={value} value={value}>{prettyLabel(value)}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="aoc_audience" style={{ color: PINK }}>Intended audience</Label>
+                        <Input
+                          id="aoc_audience"
+                          value={intendedAudience}
+                          onChange={(event) => setIntendedAudience(event.target.value)}
+                          placeholder="e.g. engineers new to ML"
+                          style={{ borderColor: PINK }}
+                          autoComplete="off"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="aoc_emphasize" style={{ color: PINK }}>
+                          Topics to emphasize (comma separated)
+                        </Label>
+                        <Input
+                          id="aoc_emphasize"
+                          value={topicsEmphasize}
+                          onChange={(event) => setTopicsEmphasize(event.target.value)}
+                          placeholder="e.g. attention, transformers"
+                          style={{ borderColor: PINK }}
+                          autoComplete="off"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="aoc_avoid" style={{ color: PINK }}>
+                          Topics to avoid (comma separated)
+                        </Label>
+                        <Input
+                          id="aoc_avoid"
+                          value={topicsAvoid}
+                          onChange={(event) => setTopicsAvoid(event.target.value)}
+                          placeholder="e.g. pricing, roadmap"
+                          style={{ borderColor: PINK }}
+                          autoComplete="off"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="aoc_questions" style={{ color: PINK }}>
+                          Key questions (one per line)
+                        </Label>
+                        <Textarea
+                          id="aoc_questions"
+                          value={keyQuestions}
+                          onChange={(event) => setKeyQuestions(event.target.value)}
+                          placeholder="What problem does it solve?"
+                          className="min-h-[60px] text-xs"
+                          style={{ borderColor: PINK }}
+                          autoComplete="off"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="aoc_duration" style={{ color: PINK }}>
+                          Target duration (minutes)
+                        </Label>
+                        <Input
+                          id="aoc_duration"
+                          type="number"
+                          min={1}
+                          max={180}
+                          value={targetDuration}
+                          onChange={(event) => setTargetDuration(event.target.value)}
+                          placeholder="e.g. 15"
+                          style={{ borderColor: PINK }}
+                          autoComplete="off"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
-            <div className="flex flex-col gap-3">
-              <Button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="w-full"
-              >
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isSubmitting ? t('podcasts.generating') : t('podcasts.generate')}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-                className="w-full"
-              >
-                {t('common.cancel')}
-              </Button>
+              <div className="flex flex-col gap-3">
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="w-full"
+                >
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isSubmitting ? t('podcasts.generating') : t('podcasts.generate')}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isSubmitting}
+                  className="w-full"
+                >
+                  {t('common.cancel')}
+                </Button>
+              </div>
             </div>
-          </div>
+          </ScrollArea>
         </div>
       </DialogContent>
     </Dialog>
